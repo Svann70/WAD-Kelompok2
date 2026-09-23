@@ -1,7 +1,12 @@
 import useLocalStorageState from "../hooks/useLocalStorageState";
+import { useNavigate } from "react-router-dom";
 
 export default function Hero() {
-  const { angka, setAngka } = useLocalStorageState("angka", 0);
+  const navigate = useNavigate();
+
+  const handlePindah = () => {
+    navigate('/login');
+  };
 
   return (
     <section className="hero">
@@ -12,11 +17,10 @@ export default function Hero() {
         <p className="text-lg text-gray-600 mb-8 max-w-xl mx-auto">
           Personal Job and Intern Tracker untuk mempermudah pencatatan lamaran kerja dan magang Anda.
         </p>
-        <button
+        <button onClick = {handlePindah}
           className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300 cursor-pointer font-medium"
-          onClick={() => setAngka(angka + 1)}
         >
-          Klik Button ini : {angka}
+          Mulai Sekarang
         </button>
       </div>
     </section>

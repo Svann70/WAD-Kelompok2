@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import About from "./pages/About";
-import Tracker from "./pages/Tracker";
 import Header from "./component/Header";
 import Footer from "./component/Footer";
 import { featuresData } from "./data/features";
+import Login from "./pages/Login"
 
 const App = () => {
   return (
@@ -14,7 +14,7 @@ const App = () => {
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<Home features={featuresData} />} />
-            <Route path="/tracker" element={<Tracker />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/about" element={<About />} />
           </Routes>
         </main>

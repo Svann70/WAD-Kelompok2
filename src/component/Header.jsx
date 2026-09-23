@@ -26,9 +26,6 @@ export default function Header() {
           <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate("/")}>
             Home
           </span>
-          <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate("/tracker")}>
-            Tracker
-          </span>
           <span className="cursor-pointer hover:text-gray-900 transition" onClick={() => navigate("/about")}>
             About
           </span>
@@ -40,9 +37,6 @@ export default function Header() {
         <div className="md:hidden border-t border-gray-100 px-6 py-3 flex flex-col gap-3 text-sm text-gray-700 bg-gray-50">
           <span className="cursor-pointer py-1" onClick={() => { navigate("/"); setIsOpen(false); }}>
             Home
-          </span>
-          <span className="cursor-pointer py-1" onClick={() => { navigate("/tracker"); setIsOpen(false); }}>
-            Tracker
           </span>
           <span className="cursor-pointer py-1" onClick={() => { navigate("/about"); setIsOpen(false); }}>
             About
