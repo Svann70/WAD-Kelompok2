@@ -9,6 +9,7 @@ type Job struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
 	Title       string         `gorm:"not null" json:"title"`       // Sesuai dengan "Posisi"
 	Company     string         `gorm:"not null" json:"company"`     // Sesuai dengan "Perusahaan"
+	Link    	string         `json:"link"`                        // Sesuai dengan "Link"	
 	Type        string         `json:"type"`                        // Sesuai dengan "Tipe" (misal: Full-time, Internship)
 	Description string         `json:"description"`                 // Sesuai dengan "Catatan"
 	Status      string         `gorm:"default:'applied'" json:"status"`
