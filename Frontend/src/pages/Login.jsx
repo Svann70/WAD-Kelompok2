@@ -36,7 +36,7 @@ export default function Login() {
       setIsLoading(false);
       // Simpan status login sederhana jika diinginkan
       localStorage.setItem("jobtrack_user", JSON.stringify({ email }));
-      navigate("/");
+      navigate("/tracker");
     }, 600);
   };
 
