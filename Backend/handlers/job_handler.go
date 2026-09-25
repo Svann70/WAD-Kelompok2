@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 	"jobtrack-backend/config"
 	"jobtrack-backend/models"
 
@@ -96,4 +97,16 @@ func UpdateJobStatus(c *gin.Context) {
 		"message": "Status berhasil diperbarui!",
 		"data":    job,
 	})
+}
+
+// GetJobStatusHistory: menampilkan riwayat perubahan status untuk 1 job
+func GetJobStatusHistory(c *gin.Context) {
+	var histories []models.StatusHistory
+
+	if err := config.DB.Where("job_id = ?", c.Param("id")).Order("changed_at desc").Find(&histories).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil riwayat status!"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": histories})
 }

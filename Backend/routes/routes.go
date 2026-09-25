@@ -13,5 +13,6 @@ func SetupRoutes(r *gin.Engine) {
 		api.PUT("/jobs/:id", handlers.UpdateJob)
 		api.DELETE("/jobs/:id", handlers.DeleteJob)
 		api.PATCH("/jobs/:id/status", handlers.UpdateJobStatus)
+		api.GET("/jobs/:id/status-history", handlers.GetJobStatusHistory)
 	}
 }
