@@ -1,8 +1,8 @@
 package main
 
 import (
-	"jobtrack-backend/config"
-	"jobtrack-backend/middleware"
+	"jobtrack-backend/src/config"
+	"jobtrack-backend/src/middleware"
 
 	"github.com/gin-gonic/gin"
 )
