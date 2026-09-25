@@ -5,6 +5,7 @@ import Header from "./component/Header";
 import Footer from "./component/Footer";
 import { featuresData } from "./data/features";
 import Login from "./pages/Login"
+import Tracker from "./pages/Tracker";
 
 const App = () => {
   return (
@@ -15,6 +16,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Home features={featuresData} />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/tracker" element={<Tracker />} />
             <Route path="/about" element={<About />} />
           </Routes>
         </main>
