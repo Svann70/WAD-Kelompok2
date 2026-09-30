@@ -6,4 +6,6 @@ dist-ssr/
 .env
 *README.md
 *.md
-
+*.py
+.pdf
+*.png
