@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"jobtrack-backend/models"
 	"github.com/joho/godotenv"
     "gorm.io/driver/postgres"
     "gorm.io/gorm"
@@ -41,4 +42,6 @@ sslmode := os.Getenv("DB_SSLMODE")
 
 		DB = database
 		log.Println("Berhasil Terhubung ke Db")
+
+		database.AutoMigrate(&models.Job{}, &models.StatusHistory{})
 }

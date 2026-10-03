@@ -68,20 +68,28 @@ type UpdateStatusInput struct {
 func UpdateJobStatus(c *gin.Context) {
 	var job models.Job
 
-	// 1. Cari job berdasarkan ID
 	if err := config.DB.Where("id = ?", c.Param("id")).First(&job).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Data job tidak ditemukan!"})
 		return
 	}
 
-	// 2. Validasi input JSON dari Request Body
 	var input UpdateStatusInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format status tidak valid!"})
 		return
 	}
 
-	// 3. Buat map untuk menampung field yang di-update
+	validStatuses := map[string]bool{
+		"Terkirim":  true,
+		"Interview": true,
+		"Diterima":  true,
+		"Ditolak":   true,
+	}
+	if !validStatuses[input.Status] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Status harus salah satu dari: Terkirim, Interview, Diterima, Ditolak"})
+		return
+	}
+
 	updateData := map[string]interface{}{
 		"status": input.Status,
 	}
@@ -89,17 +97,21 @@ func UpdateJobStatus(c *gin.Context) {
 		updateData["link"] = input.Link
 	}
 
-	// 4. Update data di database (GORM otomatis memperbarui field UpdatedAt)
 	config.DB.Model(&job).Updates(updateData)
 
-	// 5. Kirim respon balik ke Client/Frontend
+	history := models.StatusHistory{
+		JobID:     job.ID,
+		Status:    input.Status,
+		ChangedAt: time.Now(),
+	}
+	config.DB.Create(&history)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Status berhasil diperbarui!",
 		"data":    job,
 	})
 }
 
-// GetJobStatusHistory: menampilkan riwayat perubahan status untuk 1 job
 func GetJobStatusHistory(c *gin.Context) {
 	var histories []models.StatusHistory
 

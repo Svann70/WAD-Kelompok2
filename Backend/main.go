@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	config.ConnectDB()
+	config.ConnectDatabase()
 
 	r := gin.Default()
 
