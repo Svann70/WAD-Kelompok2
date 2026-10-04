@@ -2,11 +2,13 @@ package controllers
 
 import (
 	"net/http"
+	"os"
 
 	"jobtrack-backend/config"
 	"jobtrack-backend/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -14,6 +16,11 @@ type RegisterRequest struct {
 	Name     string `json:"name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
 }
 
 func Register(c *gin.Context) {
@@ -79,6 +86,74 @@ func Register(c *gin.Context) {
 			"id":    user.ID,
 			"name":  user.Name,
 			"email": user.Email,
+		},
+	})
+}
+
+func Login(c *gin.Context) {
+	var request LoginRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Data login tidak valid",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	var user models.User
+
+	result := config.DB.Where("email = ?", request.Email).First(&user)
+
+	if result.Error != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"message": "Email atau password salah",
+		})
+		return
+	}
+
+	err := bcrypt.CompareHashAndPassword(
+		[]byte(user.Password),
+		[]byte(request.Password),
+	)
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"message": "Email atau password salah",
+		})
+		return
+	}
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": user.ID,
+		"email":   user.Email,
+	})
+
+	tokenString, err := token.SignedString([]byte(jwtSecret))
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Gagal membuat token",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Login berhasil",
+		"data": gin.H{
+			"token": tokenString,
+			"user": gin.H{
+				"id":    user.ID,
+				"name":  user.Name,
+				"email": user.Email,
+			},
 		},
 	})
 }

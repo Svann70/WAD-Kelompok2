@@ -18,6 +18,15 @@ func main() {
 	router := gin.Default()
 
 	router.POST("/api/auth/register", controllers.Register)
+	router.POST("/api/auth/login", controllers.Login)
+
+	router.GET("/api/test-auth", middleware.AuthMiddleware(), func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"success": true,
+			"message": "Anda berhasil melewati JWT Middleware",
+			"user_id": c.MustGet("user_id"),
+		})
+	})
 
 	router.Use(middleware.SetupCORS())
 
