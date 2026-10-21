@@ -3,6 +3,10 @@ package handlers
 import (
 	"net/http"
 	"time"
+	"math"
+	"net/http"
+	"strconv"
+
 	"jobtrack-backend/config"
 	"jobtrack-backend/models"
 
@@ -14,6 +18,47 @@ func GetJobs(c *gin.Context) {
 	var jobs []models.Job
 	config.DB.Find(&jobs)
 	c.JSON(http.StatusOK, gin.H{"data": jobs})
+// Menampilkan job dengan pagination dan filter
+func GetJobs(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	search := c.Query("search")
+	status := c.Query("status")
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+	offset := (page - 1) * limit
+
+	query := config.DB.Model(&models.Job{})
+
+	if search != "" {
+		query = query.Where("title ILIKE ? OR company ILIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+	if status != "" && status != "Semua" {
+		query = query.Where("status = ?", status)
+	}
+
+	var totalItems int64
+	query.Count(&totalItems)
+
+	var jobs []models.Job
+	query.Order("created_at desc").Offset(offset).Limit(limit).Find(&jobs)
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(limit)))
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": jobs,
+		"pagination": gin.H{
+			"current_page": page,
+			"limit":        limit,
+			"total_items":  totalItems,
+			"total_pages":  totalPages,
+		},
+	})
 }
 
 // Menambahkan job baru
@@ -22,6 +67,12 @@ func CreateJob(c *gin.Context) {
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	if uid, exists := c.Get("user_id"); exists {
+		if floatUID, ok := uid.(float64); ok {
+			input.UserID = uint(floatUID)
+		}
 	}
 
 	config.DB.Create(&input)
@@ -47,6 +98,7 @@ func UpdateJob(c *gin.Context) {
 }
 
 // Menghapus job berdasarkan ID
+// Menghapus job berdasarkan ID (soft delete)
 func DeleteJob(c *gin.Context) {
 	var job models.Job
 	if err := config.DB.Where("id = ?", c.Param("id")).First(&job).Error; err != nil {
@@ -59,6 +111,7 @@ func DeleteJob(c *gin.Context) {
 }
 
 // Struct khusus untuk membaca input status & link
+// Struct khusus update status & link
 type UpdateStatusInput struct {
 	Status string `json:"status" binding:"required"`
 	Link   string `json:"link"`
@@ -68,6 +121,9 @@ type UpdateStatusInput struct {
 func UpdateJobStatus(c *gin.Context) {
 	var job models.Job
 
+// UpdateJobStatus: Khusus memperbarui status & link secara instan
+func UpdateJobStatus(c *gin.Context) {
+	var job models.Job
 	if err := config.DB.Where("id = ?", c.Param("id")).First(&job).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Data job tidak ditemukan!"})
 		return
@@ -93,6 +149,7 @@ func UpdateJobStatus(c *gin.Context) {
 	updateData := map[string]interface{}{
 		"status": input.Status,
 	}
+	updateData := map[string]interface{}{"status": input.Status}
 	if input.Link != "" {
 		updateData["link"] = input.Link
 	}
@@ -121,4 +178,6 @@ func GetJobStatusHistory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": histories})
+}
+	c.JSON(http.StatusOK, gin.H{"message": "Status berhasil diperbarui!", "data": job})
 }

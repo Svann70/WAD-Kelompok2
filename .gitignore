@@ -6,3 +6,11 @@ dist-ssr/
 .env
 *README.md
 
+*.md
+*.py
+.pdf
+*.png
+*.sql
+*.jpeg
+*.jpg
+soal.jpeg
