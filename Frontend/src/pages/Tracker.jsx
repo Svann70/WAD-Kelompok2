@@ -1,53 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-
-// Data awal contoh lamaran kerja & magang
-const dataAwal = [
-  {
-    id: 1,
-    perusahaan: "GoTo Financial",
-    posisi: "Software Engineer Intern",
-    tipe: "Magang",
-    tanggal: "2026-09-15",
-    status: "Interview",
-    catatan: "User interview via Google Meet"
-  },
-  {
-    id: 2,
-    perusahaan: "Bank Mandiri",
-    posisi: "Backend Developer Intern",
-    tipe: "Magang",
-    tanggal: "2026-09-18",
-    status: "Terkirim",
-    catatan: "Kirim CV melalui website karir"
-  },
-  {
-    id: 3,
-    perusahaan: "Traveloka",
-    posisi: "Junior Frontend Engineer",
-    tipe: "Full-time",
-    tanggal: "2026-09-10",
-    status: "Diterima",
-    catatan: "Offering letter sudah masuk email"
-  }
-];
+import api from "../api/GetApi";
 
 export default function Tracker() {
   // -------------------------------------------------------------
   // 1. STATE UTAMA
   // -------------------------------------------------------------
-  // Mengambil data dari localStorage jika ada, jika tidak pakai dataAwal
-  const [daftarLamaran, setDaftarLamaran] = useState(() => {
-    const dataTersimpan = localStorage.getItem("jobtrack_data");
-    return dataTersimpan ? JSON.parse(dataTersimpan) : dataAwal;
-  });
-
-  // State untuk pencarian dan filter status
+  const [daftarLamaran, setDaftarLamaran] = useState([]);
   const [kataKunci, setKataKunci] = useState("");
   const [filterStatus, setFilterStatus] = useState("Semua");
-
-  // State untuk pop-up modal
   const [tampilkanModal, setTampilkanModal] = useState(false);
+  const [halaman, setHalaman] = useState(1);
+  const dataPerHalaman = 5;
 
   // State untuk form input
   const [perusahaan, setPerusahaan] = useState("");
@@ -56,9 +20,30 @@ export default function Tracker() {
   const [tanggal, setTanggal] = useState(new Date().toISOString().split("T")[0]);
   const [status, setStatus] = useState("Terkirim");
   const [catatan, setCatatan] = useState("");
-
-  // State untuk mode edit (ID data yang sedang diedit, atau null jika tambah baru)
   const [idEdit, setIdEdit] = useState(null);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await api.get("/jobs");
+        const list = Array.isArray(response.data?.data) ? response.data.data : [];
+        const jobsData = list.map((item) => ({
+          id: item.id,
+          perusahaan: item.company,
+          posisi: item.title,
+          tipe: item.type,
+          tanggal: item.created_at ? item.created_at.split("T")[0] : "",
+          status: item.status,
+          catatan: item.description || "",
+        }));
+        setDaftarLamaran(jobsData);
+      } catch (error) {
+        console.error("Gagal mengambil data lamaran:", error);
+      }
+    };
+
+    fetchJobs();
+  }, []);
 
   // -------------------------------------------------------------
   // 2. EFEK: SIMPAN OTOMATIS KE LOCALSTORAGE
@@ -107,7 +92,7 @@ export default function Tracker() {
   };
 
   // Menangani submit form di dalam pop-up
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!perusahaan.trim() || !posisi.trim()) {
@@ -116,57 +101,83 @@ export default function Tracker() {
     }
 
     if (idEdit !== null) {
-      // Perbarui data yang diedit
-      const dataTerupdate = daftarLamaran.map((item) => {
-        if (item.id === idEdit) {
-          return {
-            ...item,
-            perusahaan,
-            posisi,
-            tipe,
-            tanggal,
-            status,
-            catatan
-          };
-        }
-        return item;
-      });
-      setDaftarLamaran(dataTerupdate);
+      try {
+        const response = await api.put(`/jobs/${idEdit}`, {
+          company: perusahaan,
+          title: posisi,
+          type: tipe,
+          description: catatan,
+          status: status,
+        });
+        const updated = response.data?.data || {};
+        setDaftarLamaran((prev) =>
+          prev.map((item) =>
+            item.id === idEdit
+              ? {
+                  id: updated.id || idEdit,
+                  perusahaan: updated.company || perusahaan,
+                  posisi: updated.title || posisi,
+                  tipe: updated.type || tipe,
+                  tanggal: updated.created_at ? updated.created_at.split("T")[0] : item.tanggal,
+                  status: updated.status || status,
+                  catatan: updated.description !== undefined ? updated.description : catatan,
+                }
+              : item
+          )
+        );
+        handleTutupModal();
+      } catch (err) {
+        console.error("Gagal update job:", err);
+      }
     } else {
-      // Tambah data baru
-      const lamaranBaru = {
-        id: Date.now(),
-        perusahaan,
-        posisi,
-        tipe,
-        tanggal,
-        status,
-        catatan
-      };
-      setDaftarLamaran([lamaranBaru, ...daftarLamaran]);
+      try {
+        const response = await api.post("/jobs", {
+          company: perusahaan,
+          title: posisi,
+          type: tipe,
+          description: catatan,
+          status: status,
+        });
+        const created = response.data?.data || {};
+        const itemBaru = {
+          id: created.id || Date.now(),
+          perusahaan: created.company || perusahaan,
+          posisi: created.title || posisi,
+          tipe: created.type || tipe,
+          tanggal: created.created_at ? created.created_at.split("T")[0] : tanggal,
+          status: created.status || status,
+          catatan: created.description !== undefined ? created.description : catatan,
+        };
+        setDaftarLamaran([itemBaru, ...daftarLamaran]);
+        handleTutupModal();
+      } catch (err) {
+        console.error("Gagal menambah job:", err);
+      }
     }
-
-    handleTutupModal();
   };
 
   // Menghapus data lamaran
-  const handleHapus = (id, namaPerusahaan) => {
-    const konfirmasi = confirm(`Hapus catatan lamaran di ${namaPerusahaan}?`);
-    if (konfirmasi) {
-      const sisaData = daftarLamaran.filter((item) => item.id !== id);
-      setDaftarLamaran(sisaData);
+  const handleHapus = async (id, namaPerusahaan) => {
+    if (confirm(`Apakah Anda yakin ingin menghapus lamaran di ${namaPerusahaan}?`)) {
+      try {
+        await api.delete(`/jobs/${id}`);
+        setDaftarLamaran((prevData) => prevData.filter((item) => item.id !== id));
+      } catch (error) {
+        console.error("Gagal menghapus lamaran:", error);
+      }
     }
   };
 
   // Mengubah status secara langsung dari dropdown baris tabel
-  const handleUbahStatus = (id, statusBaru) => {
-    const dataTerupdate = daftarLamaran.map((item) => {
-      if (item.id === id) {
-        return { ...item, status: statusBaru };
-      }
-      return item;
-    });
-    setDaftarLamaran(dataTerupdate);
+  const handleUbahStatus = async (id, statusBaru) => {
+    try {
+      await api.patch(`/jobs/${id}/status`, { status: statusBaru });
+      setDaftarLamaran((prevData) =>
+        prevData.map((item) => (item.id === id ? { ...item, status: statusBaru } : item))
+      );
+    } catch (error) {
+      console.error("Gagal memperbarui status:", error);
+    }
   };
 
   // -------------------------------------------------------------
@@ -182,6 +193,14 @@ export default function Tracker() {
 
     return cocokKataKunci && cocokStatus;
   });
+
+  useEffect(() => {
+    setHalaman(1);
+  }, [kataKunci, filterStatus]);
+
+  const totalHalaman = Math.ceil(lamaranTersaring.length / dataPerHalaman) || 1;
+  const indeksAwal = (halaman - 1) * dataPerHalaman;
+  const dataTampil = lamaranTersaring.slice(indeksAwal, indeksAwal + dataPerHalaman);
 
   const totalSemua = daftarLamaran.length;
   const totalInterview = daftarLamaran.filter((item) => item.status === "Interview").length;
@@ -281,7 +300,7 @@ export default function Tracker() {
                   </td>
                 </tr>
               ) : (
-                lamaranTersaring.map((item) => (
+                dataTampil.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50/60 transition">
                     <td className="py-3 px-4 font-medium text-gray-900">
                       {item.perusahaan}
@@ -326,6 +345,36 @@ export default function Tracker() {
             </tbody>
           </table>
         </div>
+
+        {/* Kontrol Pagination */}
+        {lamaranTersaring.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50 gap-2">
+            <span className="text-xs text-gray-500">
+              Menampilkan {indeksAwal + 1} - {Math.min(indeksAwal + dataPerHalaman, lamaranTersaring.length)} dari {lamaranTersaring.length} lamaran
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={halaman === 1}
+                onClick={() => setHalaman((prev) => Math.max(prev - 1, 1))}
+                className="px-3 py-1 text-xs font-medium border border-gray-300 rounded-md bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                &larr; Prev
+              </button>
+              <span className="text-xs font-semibold text-gray-700">
+                Halaman {halaman} dari {totalHalaman}
+              </span>
+              <button
+                type="button"
+                disabled={halaman >= totalHalaman}
+                onClick={() => setHalaman((prev) => Math.min(prev + 1, totalHalaman))}
+                className="px-3 py-1 text-xs font-medium border border-gray-300 rounded-md bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Next &rarr;
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* POP-UP MODAL (UNTUK TAMBAH & EDIT LAMARAN) */}

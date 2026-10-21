@@ -9,3 +9,7 @@ dist-ssr/
 *.py
 .pdf
 *.png
+*.sql
+*.jpeg
+*.jpg
+soal.jpeg
