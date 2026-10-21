@@ -13,14 +13,23 @@ func main() {
 
 	config.ConnectDatabase()
 
-	config.DB.AutoMigrate(&models.User{})
+	if config.DB != nil {
+		config.DB.AutoMigrate(&models.User{}, &models.Job{})
+	}
 
 	router := gin.Default()
 
+	// Auth Routes
 	router.POST("/api/auth/register", controllers.Register)
 	router.POST("/api/auth/login", controllers.Login)
 	router.GET("/api/auth/profile", middleware.AuthMiddleware(), controllers.Profile)
 	router.DELETE("/api/auth/delete-account", middleware.AuthMiddleware(), controllers.DeleteAccount)
+
+	// Job CRUD Routes (Fitur 2)
+	router.GET("/api/jobs", controllers.GetJobs)
+	router.POST("/api/jobs", controllers.CreateJob)
+	router.PUT("/api/jobs/:id", controllers.UpdateJob)
+	router.DELETE("/api/jobs/:id", controllers.DeleteJob)
 
 	router.Use(middleware.SetupCORS())
 
