@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"net/http"
+	"time"
 	"math"
 	"net/http"
 	"strconv"
@@ -11,6 +13,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Menampilkan semua job
+func GetJobs(c *gin.Context) {
+	var jobs []models.Job
+	config.DB.Find(&jobs)
+	c.JSON(http.StatusOK, gin.H{"data": jobs})
 // Menampilkan job dengan pagination dan filter
 func GetJobs(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -90,6 +97,7 @@ func UpdateJob(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": job})
 }
 
+// Menghapus job berdasarkan ID
 // Menghapus job berdasarkan ID (soft delete)
 func DeleteJob(c *gin.Context) {
 	var job models.Job
@@ -102,11 +110,16 @@ func DeleteJob(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": true})
 }
 
+// Struct khusus untuk membaca input status & link
 // Struct khusus update status & link
 type UpdateStatusInput struct {
 	Status string `json:"status" binding:"required"`
 	Link   string `json:"link"`
 }
+
+// UpdateJobStatus: Khusus memperbarui status (Terkirim, Interview, Diterima, Ditolak) & Link secara instan
+func UpdateJobStatus(c *gin.Context) {
+	var job models.Job
 
 // UpdateJobStatus: Khusus memperbarui status & link secara instan
 func UpdateJobStatus(c *gin.Context) {
@@ -122,11 +135,49 @@ func UpdateJobStatus(c *gin.Context) {
 		return
 	}
 
+	validStatuses := map[string]bool{
+		"Terkirim":  true,
+		"Interview": true,
+		"Diterima":  true,
+		"Ditolak":   true,
+	}
+	if !validStatuses[input.Status] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Status harus salah satu dari: Terkirim, Interview, Diterima, Ditolak"})
+		return
+	}
+
+	updateData := map[string]interface{}{
+		"status": input.Status,
+	}
 	updateData := map[string]interface{}{"status": input.Status}
 	if input.Link != "" {
 		updateData["link"] = input.Link
 	}
 
 	config.DB.Model(&job).Updates(updateData)
+
+	history := models.StatusHistory{
+		JobID:     job.ID,
+		Status:    input.Status,
+		ChangedAt: time.Now(),
+	}
+	config.DB.Create(&history)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Status berhasil diperbarui!",
+		"data":    job,
+	})
+}
+
+func GetJobStatusHistory(c *gin.Context) {
+	var histories []models.StatusHistory
+
+	if err := config.DB.Where("job_id = ?", c.Param("id")).Order("changed_at desc").Find(&histories).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil riwayat status!"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": histories})
+}
 	c.JSON(http.StatusOK, gin.H{"message": "Status berhasil diperbarui!", "data": job})
 }

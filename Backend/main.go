@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"jobtrack-backend/config"
+	"jobtrack-backend/routes"
 	"jobtrack-backend/controllers"
 	"jobtrack-backend/middleware"
 	"jobtrack-backend/models"
@@ -14,6 +15,15 @@ import (
 )
 
 func main() {
+	config.ConnectDatabase()
+
+	r := gin.Default()
+
+	// Memanggil semua rute API
+	routes.SetupRoutes(r)
+
+	r.Run(":8080")
+
 	config.ConnectDatabase()
 
 	config.DB.AutoMigrate(&models.User{}, &models.Job{})
