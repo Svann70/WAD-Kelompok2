@@ -123,12 +123,11 @@ func CreateJob(c *gin.Context) {
 	}
 
 	job := models.Job{
-		Perusahaan: input.Perusahaan,
-		Posisi:     input.Posisi,
-		Tipe:       input.Tipe,
-		Tanggal:    input.Tanggal,
-		Catatan:    input.Catatan,
-		UserID:     input.UserID,
+		Company:     input.Perusahaan,
+		Title:       input.Posisi,
+		Type:        input.Tipe,
+		Description: input.Catatan,
+		UserID:      input.UserID,
 	}
 
 	if err := config.DB.Create(&job).Error; err != nil {
@@ -200,19 +199,16 @@ func UpdateJob(c *gin.Context) {
 
 	// Update field jika disediakan
 	if input.Perusahaan != "" {
-		job.Perusahaan = input.Perusahaan
+		job.Company = input.Perusahaan
 	}
 	if input.Posisi != "" {
-		job.Posisi = input.Posisi
+		job.Title = input.Posisi
 	}
 	if input.Tipe != "" {
-		job.Tipe = input.Tipe
-	}
-	if input.Tanggal != "" {
-		job.Tanggal = input.Tanggal
+		job.Type = input.Tipe
 	}
 	if input.Catatan != "" {
-		job.Catatan = input.Catatan
+		job.Description = input.Catatan
 	}
 	if input.UserID != 0 {
 		job.UserID = input.UserID

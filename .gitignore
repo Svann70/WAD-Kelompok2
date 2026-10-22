@@ -5,5 +5,12 @@ dist-ssr/
 .DS_Store
 .env
 *README.md
-*.md
 
+*.md
+*.py
+.pdf
+*.png
+*.sql
+*.jpeg
+*.jpg
+soal.jpeg

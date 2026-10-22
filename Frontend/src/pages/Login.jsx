@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import api from "../api/GetApi";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -31,13 +32,22 @@ export default function Login() {
 
     setIsLoading(true);
 
-    // Simulasi autentikasi
-    setTimeout(() => {
-      setIsLoading(false);
-      // Simpan status login sederhana jika diinginkan
-      localStorage.setItem("jobtrack_user", JSON.stringify({ email }));
+    try {
+      const response = await api.post("/auth/login", { email, password });
+      const { token, user } = response.data.data;
+
+      localStorage.setItem("jobtrack_token", token);
+      localStorage.setItem("jobtrack_user", JSON.stringify(user));
       navigate("/tracker");
-    }, 600);
+    } catch (error) {
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("Gagal masuk. Periksa kembali email dan kata sandi Anda.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -263,9 +273,13 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Catatan / Demo Info */}
-          <div className="mt-5 p-3 rounded-lg bg-gray-50 border border-gray-200/80 text-xs text-gray-500">
-            <span className="font-semibold text-gray-700">Catatan Uji Coba:</span> Anda dapat memasukkan email dan kata sandi apa pun (min. 6 karakter) untuk mensimulasikan login.
+          {/* Catatan / Demo Info (RBAC) */}
+          <div className="mt-5 p-3 rounded-lg bg-blue-50 border border-blue-200/80 text-xs text-blue-900">
+            <span className="font-semibold text-blue-950">Akun Demo Tersedia (RBAC):</span>
+            <div className="mt-1 font-mono text-[11px] text-blue-800 space-y-0.5">
+              <div>User: <b>demo@example.com</b> | <b>password123</b></div>
+              <div>Admin: <b>admin@example.com</b> | <b>admin123</b></div>
+            </div>
           </div>
 
           {/* Opsi Daftar */}
