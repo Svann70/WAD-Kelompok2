@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	"net/http"
+	"time"
 	"math"
 	"net/http"
 	"strconv"
-	"time"
 
 	"jobtrack-backend/config"
 	"jobtrack-backend/models"
@@ -12,6 +13,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Menampilkan semua job
+func GetJobs(c *gin.Context) {
+	var jobs []models.Job
+	config.DB.Find(&jobs)
+	c.JSON(http.StatusOK, gin.H{"data": jobs})
 // Menampilkan job dengan pagination dan filter
 func GetJobs(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -91,6 +97,7 @@ func UpdateJob(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": job})
 }
 
+// Menghapus job berdasarkan ID
 // Menghapus job berdasarkan ID (soft delete)
 func DeleteJob(c *gin.Context) {
 	var job models.Job
@@ -103,11 +110,16 @@ func DeleteJob(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": true})
 }
 
+// Struct khusus untuk membaca input status & link
 // Struct khusus update status & link
 type UpdateStatusInput struct {
 	Status string `json:"status" binding:"required"`
 	Link   string `json:"link"`
 }
+
+// UpdateJobStatus: Khusus memperbarui status (Terkirim, Interview, Diterima, Ditolak) & Link secara instan
+func UpdateJobStatus(c *gin.Context) {
+	var job models.Job
 
 // UpdateJobStatus: Khusus memperbarui status & link secara instan
 func UpdateJobStatus(c *gin.Context) {
@@ -134,6 +146,9 @@ func UpdateJobStatus(c *gin.Context) {
 		return
 	}
 
+	updateData := map[string]interface{}{
+		"status": input.Status,
+	}
 	updateData := map[string]interface{}{"status": input.Status}
 	if input.Link != "" {
 		updateData["link"] = input.Link
@@ -154,7 +169,6 @@ func UpdateJobStatus(c *gin.Context) {
 	})
 }
 
-// GetJobStatusHistory: Mengambil riwayat status job
 func GetJobStatusHistory(c *gin.Context) {
 	var histories []models.StatusHistory
 
@@ -164,4 +178,6 @@ func GetJobStatusHistory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": histories})
+}
+	c.JSON(http.StatusOK, gin.H{"message": "Status berhasil diperbarui!", "data": job})
 }

@@ -49,8 +49,11 @@ func ConnectDatabase() {
 		log.Fatalf("Gagal Koneksi ke Database: %v\n", err)
 	}
 
+		DB = database
+		log.Println("Berhasil Terhubung ke Db")
+
+		database.AutoMigrate(&models.Job{}, &models.StatusHistory{})
+}
 	DB = database
 	log.Println("Berhasil Terhubung ke Database")
-
-	database.AutoMigrate(&models.Job{}, &models.StatusHistory{})
 }
