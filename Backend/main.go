@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"jobtrack-backend/config"
-	"jobtrack-backend/routes"
 	"jobtrack-backend/controllers"
 	"jobtrack-backend/middleware"
 	"jobtrack-backend/models"
@@ -17,16 +16,9 @@ import (
 func main() {
 	config.ConnectDatabase()
 
-	r := gin.Default()
-
-	// Memanggil semua rute API
-	routes.SetupRoutes(r)
-
-	r.Run(":8080")
-
-	config.ConnectDatabase()
-
-	config.DB.AutoMigrate(&models.User{}, &models.Job{})
+	if config.DB != nil {
+		config.DB.AutoMigrate(&models.User{}, &models.Job{}, &models.StatusHistory{})
+	}
 
 	if len(os.Args) > 1 && os.Args[1] == "--seed" {
 		seeders.SeedAll()
@@ -53,6 +45,7 @@ func main() {
 		})
 	})
 
+	// Setup routes (Job CRUD, Quick Status, Status History)
 	routes.SetupRoutes(router)
 
 	router.Run(":3000")
