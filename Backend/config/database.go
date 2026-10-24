@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"jobtrack-backend/models"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -52,5 +51,6 @@ func ConnectDatabase() {
 	DB = database
 	log.Println("Berhasil Terhubung ke Database")
 
-	database.AutoMigrate(&models.Job{}, &models.StatusHistory{})
+	// Catatan: AutoMigrate semua model dipusatkan di main.go agar
+	// tidak ada migrasi ganda dan urutannya mudah dikontrol.
 }
